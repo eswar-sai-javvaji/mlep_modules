@@ -33,15 +33,12 @@ def fetch_housing_data(housing_url=HOUSING_URL, housing_path=HOUSING_PATH):
     housing_tgz.close()
 
 
-
-
 def load_housing_data(housing_path=HOUSING_PATH):
     csv_path = os.path.join(housing_path, "housing.csv")
     return pd.read_csv(csv_path)
 
 
 housing = load_housing_data()
-
 
 train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 
@@ -84,8 +81,9 @@ for set_ in (strat_train_set, strat_test_set):
 housing = strat_train_set.copy()
 housing.plot(kind="scatter", x="longitude", y="latitude")
 housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.1)
-
-corr_matrix = housing.corr()
+numerics = ["int16", "int32", "int64", "float16", "float32", "float64"]
+newdf = housing.select_dtypes(include=numerics)
+corr_matrix = newdf.corr()
 corr_matrix["median_house_value"].sort_values(ascending=False)
 housing["rooms_per_household"] = housing["total_rooms"] / housing["households"]
 housing["bedrooms_per_room"] = (
@@ -94,6 +92,7 @@ housing["bedrooms_per_room"] = (
 housing["population_per_household"] = (
     housing["population"] / housing["households"]
 )
+
 
 housing = strat_train_set.drop(
     "median_house_value", axis=1
@@ -135,10 +134,8 @@ lin_rmse = np.sqrt(lin_mse)
 lin_rmse
 
 
-
 lin_mae = mean_absolute_error(housing_labels, housing_predictions)
 lin_mae
-
 
 
 tree_reg = DecisionTreeRegressor(random_state=42)
@@ -148,7 +145,6 @@ housing_predictions = tree_reg.predict(housing_prepared)
 tree_mse = mean_squared_error(housing_labels, housing_predictions)
 tree_rmse = np.sqrt(tree_mse)
 tree_rmse
-
 
 
 param_distribs = {
@@ -169,7 +165,6 @@ rnd_search.fit(housing_prepared, housing_labels)
 cvres = rnd_search.cv_results_
 for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
     print(np.sqrt(-mean_score), params)
-
 
 
 param_grid = [
