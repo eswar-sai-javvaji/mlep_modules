@@ -23,6 +23,6 @@ The following techniques have been used:
 4. The script is now divided into 3 parts data_pep training and scoring
 5. I have added a config file which had the names of the data files and models saved
 6. we need to provide the names for train and test datasets and pikel models which are saved
-7.we can provide them via config file or through comand propt as arguments
-8.then run the script in the above mentioned order by giving specific arguments
+7. we can provide them via config file or through comand propt as arguments
+8. then run the script in the above mentioned order by giving specific arguments
 9. the code will update the arguments in config and takes from there, addition to that it will log the details of execution in model-log file for every script run
