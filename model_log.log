@@ -1,0 +1,6 @@
+INFO:root:started scoring2
+INFO:root:test data loaded
+INFO:root:loaded the imputer model from pikel files
+INFO:root:loaded the final model from pikel files
+INFO:root:forecasting is completed
+INFO:root:scoring completed
