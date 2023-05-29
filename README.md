@@ -1,9 +1,9 @@
 # mle training
 # Median housing value prediction
 
-The housing data can be downloaded from https://raw.githubusercontent.com/ageron/handson-ml/master/. The script has codes to download the data. We have modelled the median house value on given housing data. 
+The housing data can be downloaded from https://raw.githubusercontent.com/ageron/handson-ml/master/. The script has codes to download the data. We have modelled the median house value on given housing data.
 
-The following techniques have been used: 
+The following techniques have been used:
 
  - Linear regression
  - Decision Tree
@@ -17,7 +17,11 @@ The following techniques have been used:
 
 ## To excute the script
 #### conda env
-conda create --name mle-dev pandas numpy
-installed nessesary packages using pip
+conda create --name mle-dev
+installed nessesary packages using pip as mentioned in env file
 conda actiavte mle-dev
-python nonstandardcode.py
+The script is now divided into 3 parts data_pep training and scoring
+i have added a config file which had the names of the data files and models saved
+we need to provide the names for train and test datasets and pikel models which are saved
+we can provide them via config file or through comand propt as arguments
+then run the script in the above mentioned order by giving specific arguments

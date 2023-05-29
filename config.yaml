@@ -1,0 +1,7 @@
+data_set_name:
+  housing_file: housing.csv
+  test_file: test.csv
+  training_file: train.csv
+models:
+  final_model_file: finalmodel1.pkl
+  imputer_file: imputer1.pkl

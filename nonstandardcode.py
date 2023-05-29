@@ -40,6 +40,7 @@ def load_housing_data(housing_path=HOUSING_PATH):
 
 housing = load_housing_data()
 
+
 train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 
 housing["income_cat"] = pd.cut(
@@ -50,6 +51,8 @@ housing["income_cat"] = pd.cut(
 
 
 split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+
+
 for train_index, test_index in split.split(housing, housing["income_cat"]):
     strat_train_set = housing.loc[train_index]
     strat_test_set = housing.loc[test_index]
