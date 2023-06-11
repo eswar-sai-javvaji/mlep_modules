@@ -12,9 +12,12 @@ from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
 logging.basicConfig(filename="model_log.log", filemode="w", level=logging.INFO)
 logging.info("started data preparation")
 
+
 DOWNLOAD_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml/master/"
 HOUSING_PATH = os.path.join("datasets", "housing")
 HOUSING_URL = DOWNLOAD_ROOT + "datasets/housing/housing.tgz"
+
+print(HOUSING_PATH)
 
 config = yaml.safe_load(open("config.yaml", "r"))
 
@@ -131,7 +134,7 @@ print("train ", strat_train_set.shape)
 print(HOUSING_PATH)
 print(os.path.join(HOUSING_PATH, training_file))
 print(os.path.join(HOUSING_PATH, test_file))
-strat_test_set.to_csv(os.path.join(HOUSING_PATH, training_file), index=False)
-strat_train_set.to_csv(os.path.join(HOUSING_PATH, test_file), index=False)
+strat_test_set.to_csv(os.path.join(HOUSING_PATH, test_file), index=False)
+strat_train_set.to_csv(os.path.join(HOUSING_PATH, training_file), index=False)
 logging.info("train and test datasets are saved")
 logging.info("data preparation completed")

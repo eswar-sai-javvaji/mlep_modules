@@ -7,14 +7,42 @@ import numpy as np
 import pandas as pd
 import yaml
 from scipy.stats import randint
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeRegressor
 
-# import tarfile
+rooms_ix, bedrooms_ix, population_ix, households_ix = 3, 4, 5, 6
+
+
+class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
+    def __init__(self, add_bedrooms_per_room=True):  # no *args or **kargs
+        self.add_bedrooms_per_room = add_bedrooms_per_room
+
+    def fit(self, X, y=None):
+        return self  # nothing else to do
+
+    def transform(self, X):
+        rooms_per_household = X[:, rooms_ix] / X[:, households_ix]
+        population_per_household = X[:, population_ix] / X[:, households_ix]
+        if self.add_bedrooms_per_room:
+            bedrooms_per_room = X[:, bedrooms_ix] / X[:, rooms_ix]
+            return np.c_[
+                X,
+                rooms_per_household,
+                population_per_household,
+                bedrooms_per_room,
+            ]
+
+        else:
+            return np.c_[X, rooms_per_household, population_per_household]
+
 
 logging.basicConfig(filename="model_log.log", filemode="w", level=logging.INFO)
 logging.info("started training")
@@ -23,6 +51,9 @@ config = yaml.safe_load(open("config.yaml", "r"))
 training_file = config["data_set_name"]["training_file"]
 imputer_file = config["models"]["imputer_file"]
 final_model_file = config["models"]["final_model_file"]
+scaler_file = config["models"]["scaler_file"]
+catencoder_file = config["models"]["catencoder_file"]
+full_pipln_path = config["models"]["full_pipln_transform"]
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -41,7 +72,7 @@ config["models"]["final_model_file"] = final_model_file
 with open("config.yaml", "w") as f:
     yaml.dump(config, f, default_flow_style=False)
 
-data_prep_train = os.path.join("../datasets/", "housing/", training_file)
+data_prep_train = os.path.join("datasets/", "housing/", training_file)
 strat_train_set = pd.read_csv(data_prep_train)
 print(strat_train_set.shape)
 logging.info("train data loaded")
@@ -49,36 +80,58 @@ logging.info("train data loaded")
 housing = strat_train_set.drop(
     "median_house_value", axis=1
 )  # drop labels for training set
+
+housing_num = housing.drop("ocean_proximity", axis=1)
+
 housing_labels = strat_train_set["median_house_value"].copy()
 
 
 imputer = SimpleImputer(strategy="median")
-
-housing_num = housing.drop("ocean_proximity", axis=1)
-
-imputer.fit(housing_num)
-X = imputer.transform(housing_num)
 
 imputer_path = os.path.join("models", imputer_file)
 pickle.dump(imputer, open(imputer_path, "wb"))
 
 logging.info("imputer model is saved")
 
-housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing.index)
-housing_tr["rooms_per_household"] = (
-    housing_tr["total_rooms"] / housing_tr["households"]
-)
-housing_tr["bedrooms_per_room"] = (
-    housing_tr["total_bedrooms"] / housing_tr["total_rooms"]
-)
-housing_tr["population_per_household"] = (
-    housing_tr["population"] / housing_tr["households"]
+stnd_scaler = StandardScaler()
+
+scaler_path = os.path.join("models", scaler_file)
+pickle.dump(stnd_scaler, open(scaler_path, "wb"))
+
+logging.info("scaler model is saved")
+
+cat_encoder = OneHotEncoder()
+
+catenc_path = os.path.join("models", catencoder_file)
+pickle.dump(cat_encoder, open(catenc_path, "wb"))
+
+logging.info("cat encoder model is saved")
+
+attr_adder = CombinedAttributesAdder()
+
+num_pipeline = Pipeline(
+    [
+        ("imputer", imputer),
+        ("attribs_adder", attr_adder),
+        ("std_scaler", stnd_scaler),
+    ]
 )
 
-housing_cat = housing[["ocean_proximity"]]
-housing_prepared = housing_tr.join(
-    pd.get_dummies(housing_cat, drop_first=True)
+
+num_attribs = list(housing_num)  # only numeric columns
+cat_attribs = ["ocean_proximity"]  # only categorical columns
+
+full_pipeline = ColumnTransformer(
+    [
+        ("num", num_pipeline, num_attribs),
+        ("cat", cat_encoder, cat_attribs),
+    ]
 )
+
+housing_prepared = full_pipeline.fit_transform(housing)
+
+full_pipeline_pkl_path = os.path.join("models", full_pipln_path)
+pickle.dump(full_pipeline, open(full_pipeline_pkl_path, "wb"))
 
 logging.info("started training different models")
 lin_reg = LinearRegression()
@@ -128,7 +181,7 @@ for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
 
 param_grid = [
     # try 12 (3×4) combinations of hyperparameters
-    {"n_estimators": [3, 10, 30], "max_features": [2, 4, 6, 8]},
+    {"n_estimators": [30, 40, 50, 60], "max_features": [6, 8, 10, 12, 15]},
     # then try 6 (2×3) combinations with bootstrap set as False
     {"bootstrap": [False], "n_estimators": [3, 10], "max_features": [2, 3, 4]},
 ]
@@ -144,19 +197,23 @@ grid_search = GridSearchCV(
 )
 grid_search.fit(housing_prepared, housing_labels)
 
-grid_search.best_params_
+print(grid_search.best_params_)
 cvres = grid_search.cv_results_
 for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
     print(np.sqrt(-mean_score), params)
 
 feature_importances = grid_search.best_estimator_.feature_importances_
-sorted(zip(feature_importances, housing_prepared.columns), reverse=True)
+extra_attribs = ["rooms_per_hhold", "pop_per_hhold", "bedrooms_per_room"]
+cat_encoder = full_pipeline.named_transformers_["cat"]
+cat_one_hot_attribs = list(cat_encoder.categories_[0])
+attributes = num_attribs + extra_attribs + cat_one_hot_attribs
+print(sorted(zip(feature_importances, attributes), reverse=True))
 
 
 final_model = grid_search.best_estimator_
 
 model_path = os.path.join("models", final_model_file)
-pickle.dump(lin_reg, open(model_path, "wb"))
+pickle.dump(final_model, open(model_path, "wb"))
 
 logging.info("saved the final model")
 print("over")
