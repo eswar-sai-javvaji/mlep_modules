@@ -26,3 +26,8 @@ The following techniques have been used:
 7. we can provide them via config file or through comand propt as arguments
 8. then run the script in the above mentioned order by giving specific arguments
 9. the code will update the arguments in config and takes from there, addition to that it will log the details of execution in model-log file for every script run
+
+# To run directly using mlflow
+Created a script called main.py - please run that script which automaticaly runs all src scripts
+also created a mlproject file for mlflow and made code in a single package which can run by mlflow
+please use command "mlflow run . " to run the whole project with help of mlflow
