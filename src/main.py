@@ -1,7 +1,7 @@
 import os
 
 print("*********started data prep*********")
-os.system("python src/data_pep.py")
+os.system("python src/dataprep.py")
 print("*********data preparation completed*********")
 
 print("*********started training*********")
