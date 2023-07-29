@@ -19,14 +19,48 @@ HOUSING_URL = DOWNLOAD_ROOT + "datasets/housing/housing.tgz"
 
 print(HOUSING_PATH)
 
-config = yaml.safe_load(open("config.yaml", "r"))
-
-
-housing_file = config["data_set_name"]["housing_file"]
-training_file = config["data_set_name"]["training_file"]
-test_file = config["data_set_name"]["test_file"]
-
-logging.info("opened the config file and extracted the values")
+flag = False
+try:
+    try:
+        config = yaml.safe_load(open("config.yaml", "r"))
+        flag = True
+    except:
+        print("config file is not available, so creating a new config file")
+        logging.info(
+            "config file is not available, so creating a new config file"
+        )
+        housing_file = "housing.csv"
+        training_file = "train.csv"
+        test_file = "test.csv"
+        config = {
+            "data_set_name": {
+                "housing_file": None,
+                "training_file": None,
+                "test_file": None,
+            },
+        }
+    if flag:
+        housing_file = config["data_set_name"]["housing_file"]
+        training_file = config["data_set_name"]["training_file"]
+        test_file = config["data_set_name"]["test_file"]
+        logging.info("opened the config file and extracted the values")
+except:
+    print(
+        "data in config file is not correct so updating it with default values"
+    )
+    logging.info(
+        "data in config file is not correct so updating it deafult values"
+    )
+    config = {
+        "data_set_name": {
+            "housing_file": None,
+            "training_file": None,
+            "test_file": None,
+        },
+    }
+    housing_file = "housing.csv"
+    training_file = "train.csv"
+    test_file = "test.csv"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--traindata", help="train data saving name", type=str)
@@ -44,10 +78,9 @@ print(test_file)
 
 logging.info("using argprase the argumets are taken")
 
-
+config["data_set_name"]["housing_file"] = housing_file
 config["data_set_name"]["training_file"] = training_file
 config["data_set_name"]["test_file"] = test_file
-
 with open("config.yaml", "w") as f:
     yaml.dump(config, f, default_flow_style=False)
 logging.info("updated the config file")
@@ -67,10 +100,12 @@ def load_housing_data(housingfile, housing_path=HOUSING_PATH):
     return pd.read_csv(csv_path)
 
 
-# fetch_housing_data()
-
-housing = load_housing_data(housing_file)
-
+try:
+    housing = load_housing_data(housing_file)
+except:
+    print("data is not available so downloading it")
+    fetch_housing_data()
+    housing = load_housing_data(housing_file)
 
 train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 
