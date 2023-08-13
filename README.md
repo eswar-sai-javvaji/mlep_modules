@@ -40,3 +40,11 @@ run the python module - "python -m demo_mlep_package.main"
 this command will execute the codes and creates the config files needed and logs the info in log file and saves the pkl files in models folder
 #### Note for package:
 if the data url woudnt work please paste the data 'housing.csv' provided with this files in a way - 'dataset/housig/housing.csv'
+# Docker image
+We have created a image for the project and pushed in docker hub -  eswarjavvaji/tamlep:1.0
+Please pull that image and create a container from that image
+* the image was build on miniconda and it will automatically creates env with required installs to run the project
+* it will also intall the project package we created before and runs that package
+We can see every process running inside conatiner using docker logs cont_name
+
+
